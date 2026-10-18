@@ -1,0 +1,4 @@
+model	sha256	role
+models/two_pop_conditional_suppression_diagnostics.slim	f49e03a9d63ef8ac10697aded0a8916eb0bdc735b9bf75d0a597d5f30f3aa9df	corrected 700-run maintenance baseline
+models/mechanistic_within_orientation_variation.slim	71124f228b292f5324b054540e45d6cf07d15ce0c316909c68a543574783ca70	Arm B production model; diagnostic phase records included
+

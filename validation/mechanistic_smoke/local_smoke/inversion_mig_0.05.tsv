@@ -1,0 +1,41 @@
+// Initial random seed:
+2026092901
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'WF');
+initializeMutationRate(2e-07);
+initializeRecombinationRate(c(7.49998e-07, 0.5, 7.49998e-07), c(999999, 1000000, 1999999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0);
+initializeMutationType(3, 0.5, "f", 0);
+initializeMutationType(5, 0.5, "f", 0);
+initializeMutationType(6, 0.5, "f", 0);
+initializeMutationType(7, 0.5, "f", 0);
+initializeMutationType(8, 0.5, "f", 0);
+initializeMutationType(9, 0.5, "f", 0);
+initializeMutationType(10, 0.5, "f", 0);
+initializeMutationType(4, 0.5, "g", -0.05, 0.2);
+initializeGenomicElementType(1, m4, 1);
+initializeGenomicElement(g1, 0, 1999999);
+
+// Starting run at tick <start>:
+1 
+
+PHASE_INIT	p1	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p1	B	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	B	0.5	0.5	0.0	0.0
+ADAPTIVE_INIT	p1	1.0	1.0	1.0	1.0
+ADAPTIVE_INIT	p2	1.0	1.0	1.0	1.0
+RUN_META	mechanistic_variation=T	permanent_suppression=F	N=1000	MIG=0.05	S=0.05	VARIANT_FREQ=0.5	GENS=1000
+generation	pop	A_freq	m2_freq	m3_freq	m5_freq	m6_freq	LD_m1_m2	LD_m1_m3	LD_m2_m7	LD_m2_m8	LD_m3_m7	LD_m3_m8	LD_m5_m9	LD_m5_m10	LD_m6_m9	LD_m6_m10	A_parent11	A_parent00	A_recomb10	A_recomb01	B_parent11	B_parent00	B_recomb10	B_recomb01	pop_region_copy_burden	pop_region_weighted_burden	chr2_copy_burden
+1000	p1	0.7555	0.7555	0.7555	0.2445	0.2445	0.18472	0.18472	0.119805	0.0284843	0.119805	0.0284843	0.136745	0.0593068	0.136745	0.0593068	0.0805	0.2295	0.4095	0.036	0.064	0.049	0.117	0.0145	39.7755	0.107162	99.767
+FIXED	1000	p1	0	0.0
+GENOTYPE	1000	p1	585	341	74	1511	489	0.774322	0.225678	0.302658	0.697342
+LOAD	1000	p1	A	1511	40.6651	40.0	49.0	61445	30.7225	0.102888	0.0763523	0.202053	155.464	0.0777321
+LOAD	1000	p1	B	489	37.0266	36.0	45.0	18106	9.053	0.120367	0.0818949	0.24123	58.8594	0.0294297
+1000	p2	0.234	0.234	0.234	0.766	0.766	0.179244	0.179244	0.118347	0.02298	0.118347	0.02298	0.142155	0.05148	0.142155	0.05148	0.022	0.0715	0.1325	0.008	0.1785	0.117	0.429	0.0415	38.149	0.101688	99.8945
+FIXED	1000	p2	0	0.0
+GENOTYPE	1000	p2	77	314	609	468	1532	0.32906	0.67094	0.795039	0.204961
+LOAD	1000	p2	A	468	40.735	41.0	48.0	19064	9.532	0.0944926	0.0669627	0.183639	44.2225	0.0221113
+LOAD	1000	p2	B	1532	37.359	38.0	44.0	57234	28.617	0.103885	0.0720177	0.212666	159.153	0.0795763

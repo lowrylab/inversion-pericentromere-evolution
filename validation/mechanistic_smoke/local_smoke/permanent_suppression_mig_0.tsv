@@ -1,0 +1,41 @@
+// Initial random seed:
+2026092801
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'WF');
+initializeMutationRate(2e-07);
+initializeRecombinationRate(c(7.49998e-07, 0.5, 7.49998e-07), c(999999, 1000000, 1999999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0);
+initializeMutationType(3, 0.5, "f", 0);
+initializeMutationType(5, 0.5, "f", 0);
+initializeMutationType(6, 0.5, "f", 0);
+initializeMutationType(7, 0.5, "f", 0);
+initializeMutationType(8, 0.5, "f", 0);
+initializeMutationType(9, 0.5, "f", 0);
+initializeMutationType(10, 0.5, "f", 0);
+initializeMutationType(4, 0.5, "g", -0.05, 0.2);
+initializeGenomicElementType(1, m4, 1);
+initializeGenomicElement(g1, 0, 1999999);
+
+// Starting run at tick <start>:
+1 
+
+PHASE_INIT	p1	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p1	B	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	B	0.5	0.5	0.0	0.0
+ADAPTIVE_INIT	p1	1.0	1.0	1.0	1.0
+ADAPTIVE_INIT	p2	1.0	1.0	1.0	1.0
+RUN_META	mechanistic_variation=T	permanent_suppression=T	N=1000	MIG=0	S=0.05	VARIANT_FREQ=0.5	GENS=1000
+generation	pop	A_freq	m2_freq	m3_freq	m5_freq	m6_freq	LD_m1_m2	LD_m1_m3	LD_m2_m7	LD_m2_m8	LD_m3_m7	LD_m3_m8	LD_m5_m9	LD_m5_m10	LD_m6_m9	LD_m6_m10	A_parent11	A_parent00	A_recomb10	A_recomb01	B_parent11	B_parent00	B_recomb10	B_recomb01	pop_region_copy_burden	pop_region_weighted_burden	chr2_copy_burden
+1000	p1	1.0	1.0	1.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	1.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	46.99	0.137312	97.904
+FIXED	1000	p1	0	0.0
+GENOTYPE	1000	p1	1000	0	0	2000	0	1.0	0.0	0.0	0.0
+LOAD	1000	p1	A	2000	46.99	47.0	52.0	93980	46.99	0.137312	0.102	0.255009	274.624	0.137312
+LOAD	1000	p1	B	0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+1000	p2	0.0	0.0	0.0	1.0	1.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	1.0	0.0	0.0	40.481	0.136427	95.664
+FIXED	1000	p2	0	0.0
+GENOTYPE	1000	p2	0	0	1000	0	2000	0.0	0.0	1.0	0.0
+LOAD	1000	p2	A	0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+LOAD	1000	p2	B	2000	40.481	39.0	46.0	80962	40.481	0.136427	0.107126	0.226664	272.854	0.136427

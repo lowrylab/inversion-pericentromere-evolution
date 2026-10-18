@@ -1,0 +1,21 @@
+# Simulation outputs and machine-local files
+results/**/raw/
+results/**/stdout/
+results/**/stderr/
+*.log
+*.out
+*.err
+*.slurm
+.DS_Store
+__pycache__/
+*.py[cod]
+.Rhistory
+.RData
+.Rproj.user/
+
+# Credentials and local configuration
+.env
+*.pem
+*.key
+*.token
+

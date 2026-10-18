@@ -1,0 +1,279 @@
+// Deliberate genotype-dependent maintenance model.
+//
+// Inversion scenario:
+//   A/A: recombination permitted (with SLiM boundary correction)
+//   A/B: all internal recombination suppressed
+//   B/B: recombination permitted
+// Permanent-suppression scenario:
+//   A/A, A/B, B/B: all internal recombination suppressed
+//
+// This is intentionally not the canonical SLiM inversion recipe.
+
+initialize() {
+    if (!exists("N"))            defineConstant("N", 1000);
+    if (!exists("CHR_LEN"))     defineConstant("CHR_LEN", 1000000);
+    if (!exists("L"))           defineConstant("L", 2 * CHR_LEN);
+    if (!exists("INV_START"))   defineConstant("INV_START", 300000);
+    if (!exists("INV_END"))     defineConstant("INV_END", 700000);
+    if (!exists("INV_MID"))     defineConstant("INV_MID", 500000);
+    if (!exists("LOC_A"))       defineConstant("LOC_A", 400000);
+    if (!exists("LOC_B"))       defineConstant("LOC_B", 600000);
+    if (!exists("MIG"))         defineConstant("MIG", 0.01);
+    if (!exists("S"))           defineConstant("S", 0.05);
+    if (!exists("S_A"))         defineConstant("S_A", S);
+    if (!exists("S_B"))         defineConstant("S_B", S);
+    if (!exists("INV_INIT"))    defineConstant("INV_INIT", 0.50);
+    if (!exists("GENS"))        defineConstant("GENS", 10000);
+    if (!exists("LOG_EVERY"))   defineConstant("LOG_EVERY", 200);
+    if (!exists("INV_MAP_CM"))  defineConstant("INV_MAP_CM", 30.0);
+    if (!exists("MU_DEL"))      defineConstant("MU_DEL", 2e-7);
+    if (!exists("H_DEL"))       defineConstant("H_DEL", 0.5);
+    if (!exists("S_DEL_MEAN"))  defineConstant("S_DEL_MEAN", -0.05);
+    if (!exists("S_DEL_SHAPE")) defineConstant("S_DEL_SHAPE", 0.2);
+    if (!exists("CLEAN_INIT"))  defineConstant("CLEAN_INIT", T);
+    if (!exists("INIT_CHECK")) defineConstant("INIT_CHECK", F);
+    if (!exists("PERMANENT_SUPPRESSION")) defineConstant("PERMANENT_SUPPRESSION", F);
+
+    initializeSLiMModelType("WF");
+    initializeMutationRate(MU_DEL);
+    rec_rate = (INV_MAP_CM / 100.0) / (INV_END - INV_START + 1);
+    initializeRecombinationRate(c(rec_rate, 0.5, rec_rate), c(CHR_LEN - 1, CHR_LEN, L - 1));
+
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeMutationType("m2", 0.5, "f", 0.0);
+    initializeMutationType("m3", 0.5, "f", 0.0);
+    initializeMutationType("m5", 0.5, "f", 0.0);
+    initializeMutationType("m6", 0.5, "f", 0.0);
+    initializeMutationType("m4", H_DEL, "g", S_DEL_MEAN, S_DEL_SHAPE);
+
+    c(m1, m2, m3, m5, m6).convertToSubstitution = F;
+    // Convert fixed m4 mutations to substitutions for tractable long runs;
+    // diagnostics below add fixed m4 substitutions back into burden measures.
+    m4.convertToSubstitution = T;
+
+    c1 = INV_END - INV_START + 1;
+    initializeGenomicElementType("g1", m4, 1.0);
+    initializeGenomicElement(g1, 0, L - 1);
+}
+
+mutationEffect(m2, p1) { return exp(S_A); }
+mutationEffect(m5, p1) { return exp(-S_A); }
+mutationEffect(m2, p2) { return exp(-S_A); }
+mutationEffect(m5, p2) { return exp(S_A); }
+mutationEffect(m3, p1) { return exp(S_B); }
+mutationEffect(m6, p1) { return exp(-S_B); }
+mutationEffect(m3, p2) { return exp(-S_B); }
+mutationEffect(m6, p2) { return exp(S_B); }
+
+function (float) qvalue(float values, float q) {
+    if (size(values) == 0)
+        return 0.0;
+    values = sort(values);
+    idx = asInteger(q * (size(values) - 1));
+    return values[idx];
+}
+
+function (void) log_class_load(object<Subpopulation> pop, string pop_label, object<Haplosome> class_haps, string class_label) {
+    hp = pop.haplosomes;
+    subs = sim.substitutions;
+    fixed_m4 = subs[subs.mutationType == m4];
+    fixed_region = fixed_m4[(fixed_m4.position >= INV_START) & (fixed_m4.position <= INV_END)];
+    fixed_count = size(fixed_region);
+    fixed_weight = (fixed_count > 0) ? sum(-fixed_region.selectionCoeff) else 0.0;
+    counts = c();
+    weights = c();
+    if (size(class_haps) > 0) {
+        for (h in class_haps) {
+            hm = h.mutationsOfType(m4);
+            hm = hm[(hm.position >= INV_START) & (hm.position <= INV_END)];
+            counts = c(counts, size(hm) + fixed_count);
+            weights = c(weights, sum(-hm.selectionCoeff) + fixed_weight);
+        }
+    }
+    total = (size(counts) > 0) ? sum(counts) else 0.0;
+    wtotal = (size(weights) > 0) ? sum(weights) else 0.0;
+    mean_count = (size(counts) > 0) ? mean(counts) else 0.0;
+    mean_weight = (size(weights) > 0) ? mean(weights) else 0.0;
+    median_count = (size(counts) > 0) ? qvalue(asFloat(counts), 0.5) else 0.0;
+    q90_count = (size(counts) > 0) ? qvalue(asFloat(counts), 0.9) else 0.0;
+    median_weight = (size(weights) > 0) ? qvalue(weights, 0.5) else 0.0;
+    q90_weight = (size(weights) > 0) ? qvalue(weights, 0.9) else 0.0;
+    catn("LOAD\t" + community.tick + "\t" + pop_label + "\t" + class_label +
+        "\t" + size(class_haps) + "\t" + mean_count + "\t" + median_count +
+        "\t" + q90_count + "\t" + total + "\t" + (total / size(hp)) +
+        "\t" + mean_weight + "\t" + median_weight + "\t" + q90_weight +
+        "\t" + wtotal + "\t" + (wtotal / size(hp)));
+}
+
+function (void) log_genotype_state(object<Subpopulation> pop, string pop_label) {
+    nAA = 0;
+    nAB = 0;
+    nBB = 0;
+    for (ind in pop.individuals) {
+        a1 = ind.haplosomes[0].containsMarkerMutation(m1, INV_MID);
+        a2 = ind.haplosomes[1].containsMarkerMutation(m1, INV_MID);
+        if (a1 & a2)
+            nAA = nAA + 1;
+        else if (a1 | a2)
+            nAB = nAB + 1;
+        else
+            nBB = nBB + 1;
+    }
+    a_chrom = 2 * nAA + nAB;
+    b_chrom = 2 * nBB + nAB;
+    a_aa = (a_chrom > 0) ? (2.0 * nAA / a_chrom) else 0.0;
+    a_ab = (a_chrom > 0) ? (1.0 * nAB / a_chrom) else 0.0;
+    b_bb = (b_chrom > 0) ? (2.0 * nBB / b_chrom) else 0.0;
+    b_ab = (b_chrom > 0) ? (1.0 * nAB / b_chrom) else 0.0;
+    catn("GENOTYPE\t" + community.tick + "\t" + pop_label + "\t" + nAA + "\t" + nAB + "\t" + nBB +
+        "\t" + a_chrom + "\t" + b_chrom + "\t" + a_aa + "\t" + a_ab + "\t" + b_bb + "\t" + b_ab);
+}
+
+1 early() {
+    sim.addSubpop("p1", N);
+    sim.addSubpop("p2", N);
+    n1 = asInteger(INV_INIT * 2 * N);
+    n2 = asInteger(INV_INIT * 2 * N);
+    a1 = sample(p1.haplosomes, n1);
+    a2 = sample(p2.haplosomes, n2);
+    b1 = setDifference(p1.haplosomes, a1);
+    b2 = setDifference(p2.haplosomes, a2);
+    a1.addNewDrawnMutation(m1, INV_MID);
+    a1.addNewDrawnMutation(m2, LOC_A);
+    a1.addNewDrawnMutation(m3, LOC_B);
+    a2.addNewDrawnMutation(m1, INV_MID);
+    a2.addNewDrawnMutation(m2, LOC_A);
+    a2.addNewDrawnMutation(m3, LOC_B);
+    b1.addNewDrawnMutation(m5, LOC_A);
+    b1.addNewDrawnMutation(m6, LOC_B);
+    b2.addNewDrawnMutation(m5, LOC_A);
+    b2.addNewDrawnMutation(m6, LOC_B);
+
+    p1.setMigrationRates(p2, MIG);
+    p2.setMigrationRates(p1, MIG);
+    if (CLEAN_INIT)
+        sim.recalculateFitness();
+
+    if (INIT_CHECK) {
+        fit1 = c();
+        fit2 = c();
+        for (ind in p1.individuals) {
+            n2 = sum(ind.haplosomes.containsMarkerMutation(m2, LOC_A));
+            n3 = sum(ind.haplosomes.containsMarkerMutation(m3, LOC_B));
+            n5 = sum(ind.haplosomes.containsMarkerMutation(m5, LOC_A));
+            n6 = sum(ind.haplosomes.containsMarkerMutation(m6, LOC_B));
+            fit1 = c(fit1, exp(S_A * (n2 - n5) + S_B * (n3 - n6)));
+        }
+        for (ind in p2.individuals) {
+            n2 = sum(ind.haplosomes.containsMarkerMutation(m2, LOC_A));
+            n3 = sum(ind.haplosomes.containsMarkerMutation(m3, LOC_B));
+            n5 = sum(ind.haplosomes.containsMarkerMutation(m5, LOC_A));
+            n6 = sum(ind.haplosomes.containsMarkerMutation(m6, LOC_B));
+            fit2 = c(fit2, exp(S_A * (n5 - n2) + S_B * (n6 - n3)));
+        }
+        catn("INITCHECK\tclean_init=" + CLEAN_INIT +
+            "\tp1_A=" + mean(p1.haplosomes.containsMarkerMutation(m1, INV_MID)) +
+            "\tp2_A=" + mean(p2.haplosomes.containsMarkerMutation(m1, INV_MID)) +
+            "\tp1_m2=" + mean(p1.haplosomes.containsMarkerMutation(m2, LOC_A)) +
+            "\tp2_m2=" + mean(p2.haplosomes.containsMarkerMutation(m2, LOC_A)) +
+            "\tp1_m3=" + mean(p1.haplosomes.containsMarkerMutation(m3, LOC_B)) +
+            "\tp2_m3=" + mean(p2.haplosomes.containsMarkerMutation(m3, LOC_B)) +
+            "\tp1_m5=" + mean(p1.haplosomes.containsMarkerMutation(m5, LOC_A)) +
+            "\tp2_m5=" + mean(p2.haplosomes.containsMarkerMutation(m5, LOC_A)) +
+            "\tp1_m6=" + mean(p1.haplosomes.containsMarkerMutation(m6, LOC_B)) +
+            "\tp2_m6=" + mean(p2.haplosomes.containsMarkerMutation(m6, LOC_B)) +
+            "\tp1_expected_mean_fitness=" + mean(fit1) +
+            "\tp2_expected_mean_fitness=" + mean(fit2));
+    }
+
+    catn("RUN_META\tclean_init=" + CLEAN_INIT + "\tpermanent_suppression=" + PERMANENT_SUPPRESSION +
+        "\tN=" + N + "\tMIG=" + MIG + "\tS=" + S + "\tMU_DEL=" + MU_DEL +
+        "\tS_DEL_MEAN=" + S_DEL_MEAN + "\tH_DEL=" + H_DEL + "\tGENS=" + GENS);
+    catn("generation\tpop\tA_freq\tm2_freq\tm3_freq\tm5_freq\tm6_freq\tLD_m1_m2\tLD_m1_m3\tA_m2m3\tA_m2only\tA_m3only\tA_none\tB_m2m3\tB_m2only\tB_m3only\tB_none\tpop_region_copy_burden\tpop_region_weighted_burden\tchr2_copy_burden");
+}
+
+recombination() {
+    gm1 = haplosome1.containsMarkerMutation(m1, INV_MID);
+    gm2 = haplosome2.containsMarkerMutation(m1, INV_MID);
+    inInv = (breakpoints > INV_START) & (breakpoints <= INV_END);
+    if (PERMANENT_SUPPRESSION | (gm1 != gm2)) {
+        if (!any(inInv))
+            return F;
+        breakpoints = breakpoints[!inInv];
+        return T;
+    }
+    if (!(gm1 | gm2))
+        return F;
+    // A/A: allow internal recombination, correcting the linear SLiM map at
+    // inversion boundaries when the internal breakpoint count is odd.
+    if (sum(inInv) % 2 == 0)
+        return F;
+    left = (breakpoints == INV_START);
+    right = (breakpoints == INV_END + 1);
+    breakpoints = sort(c(breakpoints[!(left | right)],
+        c(INV_START, INV_END + 1)[c(sum(left) == 0, sum(right) == 0)]));
+    return T;
+}
+
+1:GENS late() {
+    if ((community.tick % LOG_EVERY != 0) & (community.tick != GENS))
+        return;
+    for (pop in c(p1, p2)) {
+        hp = pop.haplosomes;
+        A = hp.containsMarkerMutation(m1, INV_MID);
+        m2f = hp.containsMarkerMutation(m2, LOC_A);
+        m3f = hp.containsMarkerMutation(m3, LOC_B);
+        m5f = hp.containsMarkerMutation(m5, LOC_A);
+        m6f = hp.containsMarkerMutation(m6, LOC_B);
+        A2 = A & m2f & m3f;
+        A2only = A & m2f & !m3f;
+        A3only = A & !m2f & m3f;
+        Anone = A & !m2f & !m3f;
+        B2 = !A & m2f & m3f;
+        B2only = !A & m2f & !m3f;
+        B3only = !A & !m2f & m3f;
+        Bnone = !A & !m2f & !m3f;
+        reg = (sim.mutationsOfType(m4).position >= INV_START) & (sim.mutationsOfType(m4).position <= INV_END);
+        allm = sim.mutationsOfType(m4);
+        if (size(allm) > 0) {
+            f = sim.mutationFrequencies(pop, allm);
+            region = (allm.position >= INV_START) & (allm.position <= INV_END);
+            chr2 = allm.position >= CHR_LEN;
+            pop_region = sum(f[region]);
+            pop_weighted_region = sum(f[region] * (-allm[region].selectionCoeff));
+            chr2_load = sum(f[chr2]);
+        } else {
+            pop_region = 0.0;
+            pop_weighted_region = 0.0;
+            chr2_load = 0.0;
+        }
+        subs = sim.substitutions;
+        fixed_m4 = subs[subs.mutationType == m4];
+        fixed_region = (fixed_m4.position >= INV_START) & (fixed_m4.position <= INV_END);
+        fixed_chr2 = fixed_m4.position >= CHR_LEN;
+        fixed_region_count = sum(fixed_region);
+        fixed_chr2_count = sum(fixed_chr2);
+        fixed_region_weight = (fixed_region_count > 0) ? sum(-fixed_m4[fixed_region].selectionCoeff) else 0.0;
+        pop_region = pop_region + fixed_region_count;
+        pop_weighted_region = pop_weighted_region + fixed_region_weight;
+        chr2_load = chr2_load + fixed_chr2_count;
+        if (pop == p1)
+            label = "p1";
+        else
+            label = "p2";
+        D12 = mean(A & m2f) - mean(A) * mean(m2f);
+        D13 = mean(A & m3f) - mean(A) * mean(m3f);
+        catn(community.tick + "\t" + label + "\t" + mean(A) + "\t" + mean(m2f) + "\t" + mean(m3f) +
+            "\t" + mean(m5f) + "\t" + mean(m6f) + "\t" + D12 + "\t" + D13 +
+            "\t" + mean(A2) + "\t" + mean(A2only) + "\t" + mean(A3only) + "\t" + mean(Anone) +
+            "\t" + mean(B2) + "\t" + mean(B2only) + "\t" + mean(B3only) + "\t" + mean(Bnone) +
+            "\t" + pop_region + "\t" + pop_weighted_region + "\t" + chr2_load);
+        catn("FIXED\t" + community.tick + "\t" + label + "\t" + fixed_region_count +
+            "\t" + fixed_region_weight + "\t" + fixed_chr2_count);
+        log_genotype_state(pop, label);
+        log_class_load(pop, label, hp[A], "A");
+        log_class_load(pop, label, hp[!A], "B");
+    }
+}
+
+GENS late() { sim.simulationFinished(); }

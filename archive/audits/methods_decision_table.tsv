@@ -1,0 +1,6 @@
+paper	evidence_used	model_adjustment
+Schaal_Haller_Lotterhos_2022_corr2025	Two-deme inversion simulations; migration grid 0.001,0.01,0.1,0.25,0.4,0.5; N=1000 per deme; 5 replicates; long runs	Set migration sweep design; treat m<=0.3 as intermediate; add m=0.4 and 0.5; increase replicates and run length
+Hager_2022_Science	Opposite-sign inversion selection by habitat/ecotype; two-locus decomposition with fixed s_A+s_B	Use A/B orientation with opposite population fitness; two additive loci in inversion; evaluate symmetric/asymmetric s
+Harringmeyer_Hoekstra_2022_NEE	SLiM local adaptation with opposite population selection and broad selection grid	Run selection sensitivity grid rather than single s
+Mackintosh_2024_Genetics	Theory on inversion establishment under migration-selection and capture-vs-gain	Stage experiments: captured adaptive loci first, gained content extension second
+SLiM_manual_14_4_and_developer_notes	Corrected inversion recombination callback required for biological validity	Implement corrected recombination() callback (homozygote inverted boundary handling + heterokaryotype even-breakpoint redraw)

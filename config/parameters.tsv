@@ -1,0 +1,14 @@
+parameter	value	used_by
+N	1000	maintenance baseline; Arm B
+S	0.05	maintenance baseline; Arm B
+MU_DEL	2e-7	maintenance baseline; Arm B
+S_DEL_MEAN	-0.05	maintenance baseline; Arm B
+H_DEL	0.5	maintenance baseline; Arm B
+S_DEL_SHAPE	0.2	maintenance baseline; Arm B
+focal_interval	300000-700000	maintenance baseline; Arm B
+chromosome_length	2000000	maintenance baseline; Arm B
+INV_MAP_CM	30	maintenance baseline; Arm B
+initial_A_frequency	0.5	maintenance baseline; Arm B
+GENS	10000	maintenance baseline; Arm B
+LOG_EVERY	200	Arm B
+

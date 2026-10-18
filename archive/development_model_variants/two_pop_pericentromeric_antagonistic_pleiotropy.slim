@@ -1,0 +1,286 @@
+// ANTAGONISTIC PLEIOTROPY MODEL.
+// Two-population model for a pericentromeric non-recombining region.
+// Antagonistic pleiotropy version: each adaptive locus has opposing alleles across populations.
+// Keeps the same deleterious parameterization as two_pop_inversion.slim,
+// but suppresses recombination inside [INV_START, INV_END] in all genotypes.
+
+initialize() {
+    // ----- Core demography/genome geometry -----
+    if (!exists("N"))         defineConstant("N", 1000);
+    if (!exists("CHR_LEN"))   defineConstant("CHR_LEN", 1000000);
+    if (!exists("L"))         defineConstant("L", 2 * CHR_LEN);
+    if (!exists("INV_START")) defineConstant("INV_START", 300000);
+    if (!exists("INV_END"))   defineConstant("INV_END", 700000);
+    if (!exists("INV_MID"))   defineConstant("INV_MID", 500000);
+    if (!exists("LOC_A"))     defineConstant("LOC_A", 400000);
+    if (!exists("LOC_B"))     defineConstant("LOC_B", 600000);
+    if (!exists("MIG"))       defineConstant("MIG", 0.01);
+    if (!exists("S"))         defineConstant("S", 0.05);
+    if (!exists("S_A"))       defineConstant("S_A", S);
+    if (!exists("S_B"))       defineConstant("S_B", S);
+    if (!exists("INV_INIT"))  defineConstant("INV_INIT", 0.50);
+    if (!exists("GENS"))      defineConstant("GENS", 5000);
+    if (!exists("LOG_EVERY")) defineConstant("LOG_EVERY", 100);
+    if (!exists("REPORT_SFS")) defineConstant("REPORT_SFS", F);
+    if (!exists("SFS_BINW")) defineConstant("SFS_BINW", 0.05);
+    if (!exists("INV_MAP_CM")) defineConstant("INV_MAP_CM", 30.0);  // target map length across region
+
+    // ----- Deleterious mutation parameters -----
+    if (!exists("MU_DEL"))       defineConstant("MU_DEL", 5e-8);
+    if (!exists("H_DEL"))        defineConstant("H_DEL", 0.5);
+    if (!exists("S_DEL_MEAN")) {
+        if (exists("S_DEL"))
+            defineConstant("S_DEL_MEAN", -abs(S_DEL));
+        else
+            defineConstant("S_DEL_MEAN", -0.02);
+    }
+    if (!exists("S_DEL_SHAPE"))  defineConstant("S_DEL_SHAPE", 0.2);
+
+    // ----- Recombination map -----
+    // Chromosome 1 carries the suppressed-recombination region.
+    // Chromosome 2 is an equally sized control chromosome with no suppression.
+    // A rate of 0.5 at the chromosome boundary makes the two chromosomes effectively unlinked.
+    initializeSLiMModelType("WF");
+    initializeMutationRate(MU_DEL);
+    inv_len_bp = INV_END - INV_START + 1;
+    rec_rate = (INV_MAP_CM / 100.0) / inv_len_bp;
+    initializeRecombinationRate(c(rec_rate, 0.5, rec_rate), c(CHR_LEN - 1, CHR_LEN, L - 1));
+
+    // ----- Mutation types -----
+    // Marker/adaptive mutation types are introduced manually.
+    initializeMutationType("m1", 0.5, "f", 0.0);  // A-orientation marker/proxy
+    initializeMutationType("m2", 0.5, "f", 0.0);  // LOC_A allele favored in p1
+    initializeMutationType("m3", 0.5, "f", 0.0);  // LOC_B allele favored in p1
+    initializeMutationType("m5", 0.5, "f", 0.0);  // LOC_A allele favored in p2
+    initializeMutationType("m6", 0.5, "f", 0.0);  // LOC_B allele favored in p2
+
+    // Background deleterious mutation type.
+    initializeMutationType("m4", H_DEL, "g", S_DEL_MEAN, S_DEL_SHAPE);
+
+    c(m1, m2, m3, m5, m6).convertToSubstitution = F;
+    m4.convertToSubstitution = T;
+
+    // ----- Genome composition -----
+    initializeGenomicElementType("g1", m4, 1.0);
+    initializeGenomicElement(g1, 0, L - 1);
+}
+
+// Antagonistic pleiotropy at both loci with symmetric opposite effects:
+// LOC_A: m2 favored in p1, m5 favored in p2
+// LOC_B: m3 favored in p1, m6 favored in p2
+mutationEffect(m2, p1) { return exp(S_A); }
+mutationEffect(m5, p1) { return exp(-S_A); }
+mutationEffect(m2, p2) { return exp(-S_A); }
+mutationEffect(m5, p2) { return exp(S_A); }
+
+mutationEffect(m3, p1) { return exp(S_B); }
+mutationEffect(m6, p1) { return exp(-S_B); }
+mutationEffect(m3, p2) { return exp(-S_B); }
+mutationEffect(m6, p2) { return exp(S_B); }
+
+1 early() {
+    // ----- Initialize two populations and seed starting orientations -----
+    sim.addSubpop("p1", N);
+    sim.addSubpop("p2", N);
+
+    n1 = asInteger(INV_INIT * 2 * p1.individualCount);
+    n2 = asInteger(INV_INIT * 2 * p2.individualCount);
+
+    h1 = (n1 > 0) ? sample(p1.haplosomes, n1) else c();
+    h2 = (n2 > 0) ? sample(p2.haplosomes, n2) else c();
+
+    b1 = setDifference(p1.haplosomes, h1);
+    b2 = setDifference(p2.haplosomes, h2);
+
+    if (size(h1) > 0) {
+        h1.addNewDrawnMutation(m1, INV_MID);
+        h1.addNewDrawnMutation(m2, LOC_A);
+        h1.addNewDrawnMutation(m3, LOC_B);
+    }
+    if (size(h2) > 0) {
+        h2.addNewDrawnMutation(m1, INV_MID);
+        h2.addNewDrawnMutation(m2, LOC_A);
+        h2.addNewDrawnMutation(m3, LOC_B);
+    }
+
+    if (size(b1) > 0) {
+        b1.addNewDrawnMutation(m5, LOC_A);
+        b1.addNewDrawnMutation(m6, LOC_B);
+    }
+    if (size(b2) > 0) {
+        b2.addNewDrawnMutation(m5, LOC_A);
+        b2.addNewDrawnMutation(m6, LOC_B);
+    }
+
+    // Symmetric migration between populations.
+    p1.setMigrationRates(p2, MIG);
+    p2.setMigrationRates(p1, MIG);
+
+    // These running values let us distinguish cleaner surviving A haplotypes
+    // from true loss of deleterious burden from the A-orientation class.
+    sim.setValue("prev_a_del_total_region_p1", 0.0);
+    sim.setValue("prev_a_del_total_region_p2", 0.0);
+    sim.setValue("cum_a_del_loss_region_p1", 0.0);
+    sim.setValue("cum_a_del_loss_region_p2", 0.0);
+
+    catn("generation\tmig\tA_orientation_p1\tA_orientation_p2\tadd_locus1_p1\tadd_locus1_p2\tadd_locus2_p1\tadd_locus2_p2\tb_locus1_p1\tb_locus1_p2\tb_locus2_p1\tb_locus2_p2\tdel_load_p1\tdel_load_p2\tdel_load_region_p1\tdel_load_region_p2\tdel_load_outside_p1\tdel_load_outside_p2\ta_del_load_region_p1\ta_del_load_region_p2\ta_del_total_region_p1\ta_del_total_region_p2\ta_del_burden_region_p1\ta_del_burden_region_p2\tcum_a_del_loss_region_p1\tcum_a_del_loss_region_p2\tdel_load_chr2_p1\tdel_load_chr2_p2\tdel_sites_region\tdel_sites_outside\tdel_sites_chr2");
+}
+
+recombination() {
+    // Pericentromeric scenario: no recombination inside region in any genotype.
+    inRegion = (breakpoints > INV_START) & (breakpoints <= INV_END);
+    if (!any(inRegion))
+        return F;
+
+    breakpoints = breakpoints[!inRegion];
+    return T;
+}
+
+1:GENS late() {
+    // ----- Log orientation, adaptive-locus frequencies, and deleterious load through time -----
+    if ((community.tick % LOG_EVERY == 0) | (community.tick == GENS)) {
+        hp1 = p1.haplosomes;
+        hp2 = p2.haplosomes;
+
+        a_orient_p1 = mean(hp1.containsMarkerMutation(m1, INV_MID));
+        a_orient_p2 = mean(hp2.containsMarkerMutation(m1, INV_MID));
+        l1_p1 = mean(hp1.containsMarkerMutation(m2, LOC_A));
+        l1_p2 = mean(hp2.containsMarkerMutation(m2, LOC_A));
+        l2_p1 = mean(hp1.containsMarkerMutation(m3, LOC_B));
+        l2_p2 = mean(hp2.containsMarkerMutation(m3, LOC_B));
+        b1_p1 = mean(hp1.containsMarkerMutation(m5, LOC_A));
+        b1_p2 = mean(hp2.containsMarkerMutation(m5, LOC_A));
+        b2_p1 = mean(hp1.containsMarkerMutation(m6, LOC_B));
+        b2_p2 = mean(hp2.containsMarkerMutation(m6, LOC_B));
+
+        m4muts = sim.mutationsOfType(m4);
+        if (size(m4muts) > 0) {
+            pos = m4muts.position;
+            inRegion = (pos >= INV_START) & (pos <= INV_END);
+            onChr2 = (pos >= CHR_LEN);
+            outRegion = !inRegion;
+            inRegionMuts = m4muts[inRegion];
+
+            f1 = sim.mutationFrequencies(p1, m4muts);
+            f2 = sim.mutationFrequencies(p2, m4muts);
+
+            del_load_p1 = sum(f1);
+            del_load_p2 = sum(f2);
+            del_load_region_p1 = sum(f1[inRegion]);
+            del_load_region_p2 = sum(f2[inRegion]);
+            del_load_outside_p1 = sum(f1[outRegion]);
+            del_load_outside_p2 = sum(f2[outRegion]);
+            del_load_chr2_p1 = sum(f1[onChr2]);
+            del_load_chr2_p2 = sum(f2[onChr2]);
+            del_sites_region = sum(inRegion);
+            del_sites_outside = sum(outRegion);
+            del_sites_chr2 = sum(onChr2);
+
+            aHp1 = hp1[hp1.containsMarkerMutation(m1, INV_MID)];
+            aHp2 = hp2[hp2.containsMarkerMutation(m1, INV_MID)];
+            if ((size(inRegionMuts) > 0) & (size(aHp1) > 0)) {
+                c1 = integer(size(aHp1));
+                for (i in seqAlong(aHp1))
+                    c1[i] = sum(aHp1[i].containsMutations(inRegionMuts));
+                a_del_load_region_p1 = mean(c1);
+                a_del_total_region_p1 = sum(c1);
+            } else {
+                a_del_load_region_p1 = 0.0;
+                a_del_total_region_p1 = 0.0;
+            }
+            if ((size(inRegionMuts) > 0) & (size(aHp2) > 0)) {
+                c2 = integer(size(aHp2));
+                for (i in seqAlong(aHp2))
+                    c2[i] = sum(aHp2[i].containsMutations(inRegionMuts));
+                a_del_load_region_p2 = mean(c2);
+                a_del_total_region_p2 = sum(c2);
+            } else {
+                a_del_load_region_p2 = 0.0;
+                a_del_total_region_p2 = 0.0;
+            }
+        } else {
+            del_load_p1 = 0.0;
+            del_load_p2 = 0.0;
+            del_load_region_p1 = 0.0;
+            del_load_region_p2 = 0.0;
+            del_load_outside_p1 = 0.0;
+            del_load_outside_p2 = 0.0;
+            a_del_load_region_p1 = 0.0;
+            a_del_load_region_p2 = 0.0;
+            a_del_total_region_p1 = 0.0;
+            a_del_total_region_p2 = 0.0;
+            del_load_chr2_p1 = 0.0;
+            del_load_chr2_p2 = 0.0;
+            del_sites_region = 0;
+            del_sites_outside = 0;
+            del_sites_chr2 = 0;
+        }
+
+        // Population-average burden contributed by extant A-orientation haplotypes.
+        a_del_burden_region_p1 = a_del_total_region_p1 / size(hp1);
+        a_del_burden_region_p2 = a_del_total_region_p2 / size(hp2);
+
+        // Cumulative burden lost from the A-orientation class between logged timepoints.
+        prev_a_del_total_region_p1 = sim.getValue("prev_a_del_total_region_p1");
+        prev_a_del_total_region_p2 = sim.getValue("prev_a_del_total_region_p2");
+        delta_a_del_loss_region_p1 = prev_a_del_total_region_p1 - a_del_total_region_p1;
+        delta_a_del_loss_region_p2 = prev_a_del_total_region_p2 - a_del_total_region_p2;
+        if (delta_a_del_loss_region_p1 < 0.0)
+            delta_a_del_loss_region_p1 = 0.0;
+        if (delta_a_del_loss_region_p2 < 0.0)
+            delta_a_del_loss_region_p2 = 0.0;
+        cum_a_del_loss_region_p1 = sim.getValue("cum_a_del_loss_region_p1") + delta_a_del_loss_region_p1;
+        cum_a_del_loss_region_p2 = sim.getValue("cum_a_del_loss_region_p2") + delta_a_del_loss_region_p2;
+        sim.setValue("prev_a_del_total_region_p1", a_del_total_region_p1);
+        sim.setValue("prev_a_del_total_region_p2", a_del_total_region_p2);
+        sim.setValue("cum_a_del_loss_region_p1", cum_a_del_loss_region_p1);
+        sim.setValue("cum_a_del_loss_region_p2", cum_a_del_loss_region_p2);
+        if (REPORT_SFS & (community.tick == GENS)) {
+            // Final-generation deleterious mutation frequency spectra (binned).
+            bw = SFS_BINW;
+            nBins = asInteger(1.0 / bw);
+            if (nBins < 1)
+                nBins = 1;
+            bStarts = (0:(nBins - 1)) * bw;
+
+            if (size(m4muts) > 0) {
+                f1_in = f1[inRegion];
+                f1_out = f1[outRegion];
+                f2_in = f2[inRegion];
+                f2_out = f2[outRegion];
+            } else {
+                f1_in = c();
+                f1_out = c();
+                f2_in = c();
+                f2_out = c();
+            }
+
+            for (label in c("p1_region", "p1_outside", "p2_region", "p2_outside")) {
+                if (label == "p1_region")
+                    fv = f1_in;
+                else if (label == "p1_outside")
+                    fv = f1_out;
+                else if (label == "p2_region")
+                    fv = f2_in;
+                else
+                    fv = f2_out;
+
+                counts = integer(nBins);
+                for (bi in 0:(nBins - 1)) {
+                    lo = bStarts[bi];
+                    hi = lo + bw;
+                    if (bi == (nBins - 1))
+                        hi = 1.0000001;
+                    counts[bi] = sum((fv >= lo) & (fv < hi));
+                }
+                catn("SFS\t" + community.tick + "\t" + MIG + "\t" + label + "\tbinw=" + bw + "\tcounts=" + paste(counts, sep=","));
+            }
+        }
+
+        catn(community.tick + "\t" + MIG + "\t" + a_orient_p1 + "\t" + a_orient_p2 + "\t" + l1_p1 + "\t" + l1_p2 + "\t" + l2_p1 + "\t" + l2_p2 + "\t" + b1_p1 + "\t" + b1_p2 + "\t" + b2_p1 + "\t" + b2_p2 + "\t" + del_load_p1 + "\t" + del_load_p2 + "\t" + del_load_region_p1 + "\t" + del_load_region_p2 + "\t" + del_load_outside_p1 + "\t" + del_load_outside_p2 + "\t" + a_del_load_region_p1 + "\t" + a_del_load_region_p2 + "\t" + a_del_total_region_p1 + "\t" + a_del_total_region_p2 + "\t" + a_del_burden_region_p1 + "\t" + a_del_burden_region_p2 + "\t" + cum_a_del_loss_region_p1 + "\t" + cum_a_del_loss_region_p2 + "\t" + del_load_chr2_p1 + "\t" + del_load_chr2_p2 + "\t" + del_sites_region + "\t" + del_sites_outside + "\t" + del_sites_chr2);
+    }
+}
+
+GENS late() {
+    sim.simulationFinished();
+}

@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the repository and the associated methods papers listed in docs/REFERENCES.md."
+type: software
+title: "Genotype-dependent recombination suppression and linked selection"
+abstract: >-
+  SLiM simulations comparing conditional recombination suppression in
+  inversion heterokaryotypes with constitutive suppression in a
+  pericentromeric comparator.
+authors:
+  - family-names: Lowry
+    given-names: David B.
+    affiliation: Michigan State University
+repository-code: "https://github.com/lowrylab/inversion-pericentromere-evolution"
+license: MIT
+version: 0.1.0
+date-released: 2026-10-18
+keywords:
+  - SLiM
+  - chromosomal inversion
+  - pericentromere
+  - recombination suppression
+  - antagonistic pleiotropy

@@ -1,0 +1,24 @@
+experiment: mechanistic_within_orientation_variation_arm_B
+model: ../models/mechanistic_within_orientation_variation.slim
+model_sha256: 71124f228b292f5324b054540e45d6cf07d15ce0c316909c68a543574783ca70
+slim_version_expected: SLiM version 5.1, built Sep 12 2025 17:18:04
+N: 1000
+S: 0.05
+MU_DEL: 2e-7
+S_DEL_MEAN: -0.05
+H_DEL: 0.5
+S_DEL_SHAPE: 0.2
+INV_START: 300000
+INV_END: 700000
+INV_MAP_CM: 30
+INV_INIT: 0.5
+VARIANT_FREQ: 0.5
+GENS: 10000
+LOG_EVERY: 200
+migrations: 0,0.01,0.05
+replicates_per_model_per_migration: 50
+seed_base: 2026092800
+seed_formula: seed = seed_base + migration_index * 50 + replicate
+paired_seed_rule: same seed for inversion and permanent_suppression at each migration/replicate
+slurm_cpus_per_task: 1
+slurm_array: 0-299%50

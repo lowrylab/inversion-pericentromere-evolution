@@ -1,0 +1,41 @@
+// Initial random seed:
+2026092901
+
+// RunInitializeCallbacks():
+initializeSLiMModelType(modelType = 'WF');
+initializeMutationRate(2e-07);
+initializeRecombinationRate(c(7.49998e-07, 0.5, 7.49998e-07), c(999999, 1000000, 1999999));
+initializeMutationType(1, 0.5, "f", 0);
+initializeMutationType(2, 0.5, "f", 0);
+initializeMutationType(3, 0.5, "f", 0);
+initializeMutationType(5, 0.5, "f", 0);
+initializeMutationType(6, 0.5, "f", 0);
+initializeMutationType(7, 0.5, "f", 0);
+initializeMutationType(8, 0.5, "f", 0);
+initializeMutationType(9, 0.5, "f", 0);
+initializeMutationType(10, 0.5, "f", 0);
+initializeMutationType(4, 0.5, "g", -0.05, 0.2);
+initializeGenomicElementType(1, m4, 1);
+initializeGenomicElement(g1, 0, 1999999);
+
+// Starting run at tick <start>:
+1 
+
+PHASE_INIT	p1	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	A	0.5	0.5	0.0	0.0
+PHASE_INIT	p1	B	0.5	0.5	0.0	0.0
+PHASE_INIT	p2	B	0.5	0.5	0.0	0.0
+ADAPTIVE_INIT	p1	1.0	1.0	1.0	1.0
+ADAPTIVE_INIT	p2	1.0	1.0	1.0	1.0
+RUN_META	mechanistic_variation=T	permanent_suppression=T	N=1000	MIG=0.05	S=0.05	VARIANT_FREQ=0.5	GENS=1000
+generation	pop	A_freq	m2_freq	m3_freq	m5_freq	m6_freq	LD_m1_m2	LD_m1_m3	LD_m2_m7	LD_m2_m8	LD_m3_m7	LD_m3_m8	LD_m5_m9	LD_m5_m10	LD_m6_m9	LD_m6_m10	A_parent11	A_parent00	A_recomb10	A_recomb01	B_parent11	B_parent00	B_recomb10	B_recomb01	pop_region_copy_burden	pop_region_weighted_burden	chr2_copy_burden
+1000	p1	0.7425	0.7425	0.7425	0.2575	0.2575	0.191194	0.191194	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.7425	0.0	0.0	0.0	0.2575	0.0	0.0	43.775	0.127826	91.3655
+FIXED	1000	p1	0	0.0
+GENOTYPE	1000	p1	569	347	84	1485	515	0.76633	0.23367	0.326214	0.673786
+LOAD	1000	p1	A	1485	43.7024	40.0	56.0	64898	32.449	0.122833	0.0993778	0.209325	182.407	0.0912034
+LOAD	1000	p1	B	515	43.9845	44.0	49.0	22652	11.326	0.142224	0.104883	0.258346	73.2453	0.0366227
+1000	p2	0.263	0.263	0.263	0.737	0.737	0.193831	0.193831	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.263	0.0	0.0	0.0	0.737	0.0	0.0	43.661	0.130525	90.3635
+FIXED	1000	p2	0	0.0
+GENOTYPE	1000	p2	83	360	557	526	1474	0.315589	0.684411	0.755767	0.244233
+LOAD	1000	p2	A	526	43.0361	39.0	56.0	22637	11.3185	0.120631	0.100477	0.19627	63.4519	0.031726
+LOAD	1000	p2	B	1474	43.884	44.0	48.0	64685	32.3425	0.134056	0.107749	0.237644	197.598	0.098799

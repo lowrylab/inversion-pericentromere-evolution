@@ -1,0 +1,1 @@
+#WARNING (Haplosome_Class::ExecuteMethod_addNewMutation): addNewDrawnMutation() should probably not be called from a first() or early() event in a WF model; the added mutation will not influence fitness values during offspring generation.

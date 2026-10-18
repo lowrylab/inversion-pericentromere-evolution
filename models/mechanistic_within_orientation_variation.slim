@@ -1,0 +1,202 @@
+// Mechanistic arm for the validated conditional-suppression model.
+//
+// The recombination rule is intentionally unchanged from the maintenance
+// baseline: inversion A/A and B/B permit internal recombination, inversion
+// A/B suppresses all internal crossovers, and permanent suppression suppresses
+// all internal crossovers in every genotype.
+//
+// Neutral phase markers m7/m8 distinguish two initial A backgrounds and m9/m10
+// distinguish two initial B backgrounds.  11 and 00 are parental phases;
+// 10 and 01 are recombinant within-orientation phases.
+
+initialize() {
+    if (!exists("N")) defineConstant("N", 1000);
+    if (!exists("CHR_LEN")) defineConstant("CHR_LEN", 1000000);
+    if (!exists("L")) defineConstant("L", 2 * CHR_LEN);
+    if (!exists("INV_START")) defineConstant("INV_START", 300000);
+    if (!exists("INV_END")) defineConstant("INV_END", 700000);
+    if (!exists("INV_MID")) defineConstant("INV_MID", 500000);
+    if (!exists("LOC_A")) defineConstant("LOC_A", 400000);
+    if (!exists("LOC_B")) defineConstant("LOC_B", 600000);
+    if (!exists("VAR_LEFT")) defineConstant("VAR_LEFT", 350000);
+    if (!exists("VAR_RIGHT")) defineConstant("VAR_RIGHT", 650000);
+    if (!exists("MIG")) defineConstant("MIG", 0.01);
+    if (!exists("S")) defineConstant("S", 0.05);
+    if (!exists("S_A")) defineConstant("S_A", S);
+    if (!exists("S_B")) defineConstant("S_B", S);
+    if (!exists("INV_INIT")) defineConstant("INV_INIT", 0.50);
+    if (!exists("VARIANT_FREQ")) defineConstant("VARIANT_FREQ", 0.50);
+    if (!exists("GENS")) defineConstant("GENS", 10000);
+    if (!exists("LOG_EVERY")) defineConstant("LOG_EVERY", 200);
+    if (!exists("INV_MAP_CM")) defineConstant("INV_MAP_CM", 30.0);
+    if (!exists("MU_DEL")) defineConstant("MU_DEL", 2e-7);
+    if (!exists("H_DEL")) defineConstant("H_DEL", 0.5);
+    if (!exists("S_DEL_MEAN")) defineConstant("S_DEL_MEAN", -0.05);
+    if (!exists("S_DEL_SHAPE")) defineConstant("S_DEL_SHAPE", 0.2);
+    if (!exists("CLEAN_INIT")) defineConstant("CLEAN_INIT", T);
+    if (!exists("PERMANENT_SUPPRESSION")) defineConstant("PERMANENT_SUPPRESSION", F);
+
+    initializeSLiMModelType("WF");
+    initializeMutationRate(MU_DEL);
+    rec_rate = (INV_MAP_CM / 100.0) / (INV_END - INV_START + 1);
+    initializeRecombinationRate(c(rec_rate, 0.5, rec_rate), c(CHR_LEN - 1, CHR_LEN, L - 1));
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeMutationType("m2", 0.5, "f", 0.0);
+    initializeMutationType("m3", 0.5, "f", 0.0);
+    initializeMutationType("m5", 0.5, "f", 0.0);
+    initializeMutationType("m6", 0.5, "f", 0.0);
+    initializeMutationType("m7", 0.5, "f", 0.0);
+    initializeMutationType("m8", 0.5, "f", 0.0);
+    initializeMutationType("m9", 0.5, "f", 0.0);
+    initializeMutationType("m10", 0.5, "f", 0.0);
+    initializeMutationType("m4", H_DEL, "g", S_DEL_MEAN, S_DEL_SHAPE);
+    c(m1, m2, m3, m5, m6, m7, m8, m9, m10).convertToSubstitution = F;
+    m4.convertToSubstitution = T;
+    initializeGenomicElementType("g1", m4, 1.0);
+    initializeGenomicElement(g1, 0, L - 1);
+}
+
+mutationEffect(m2, p1) { return exp(S_A); }
+mutationEffect(m5, p1) { return exp(-S_A); }
+mutationEffect(m2, p2) { return exp(-S_A); }
+mutationEffect(m5, p2) { return exp(S_A); }
+mutationEffect(m3, p1) { return exp(S_B); }
+mutationEffect(m6, p1) { return exp(-S_B); }
+mutationEffect(m3, p2) { return exp(-S_B); }
+mutationEffect(m6, p2) { return exp(S_B); }
+
+function (float) qvalue(float x, float q) {
+    if (size(x) == 0) return 0.0;
+    x = sort(x); return x[asInteger(q * (size(x) - 1))];
+}
+
+function (void) log_class_load(object<Subpopulation> pop, string pl, object<Haplosome> hs, string cl) {
+    subs = sim.substitutions;
+    fm = subs[subs.mutationType == m4];
+    fr = fm[(fm.position >= INV_START) & (fm.position <= INV_END)];
+    fc = size(fr); fw = (fc > 0) ? sum(-fr.selectionCoeff) else 0.0;
+    counts = c(); weights = c();
+    for (h in hs) {
+        hm = h.mutationsOfType(m4);
+        hm = hm[(hm.position >= INV_START) & (hm.position <= INV_END)];
+        counts = c(counts, size(hm) + fc);
+        weights = c(weights, sum(-hm.selectionCoeff) + fw);
+    }
+    n = size(counts); total = (n > 0) ? sum(counts) else 0.0;
+    wt = (n > 0) ? sum(weights) else 0.0;
+    catn("LOAD\t" + community.tick + "\t" + pl + "\t" + cl + "\t" + size(hs) +
+        "\t" + ((n > 0) ? mean(counts) else 0.0) + "\t" + ((n > 0) ? qvalue(asFloat(counts), 0.5) else 0.0) +
+        "\t" + ((n > 0) ? qvalue(asFloat(counts), 0.9) else 0.0) + "\t" + total + "\t" + total / size(pop.haplosomes) +
+        "\t" + ((n > 0) ? mean(weights) else 0.0) + "\t" + ((n > 0) ? qvalue(weights, 0.5) else 0.0) +
+        "\t" + ((n > 0) ? qvalue(weights, 0.9) else 0.0) + "\t" + wt + "\t" + wt / size(pop.haplosomes));
+}
+
+function (void) log_genotype_state(object<Subpopulation> pop, string pl) {
+    aa = 0; ab = 0; bb = 0;
+    for (i in pop.individuals) {
+        x = i.haplosomes[0].containsMarkerMutation(m1, INV_MID);
+        y = i.haplosomes[1].containsMarkerMutation(m1, INV_MID);
+        if (x & y) aa = aa + 1; else if (x | y) ab = ab + 1; else bb = bb + 1;
+    }
+    ac = 2 * aa + ab; bc = 2 * bb + ab;
+    catn("GENOTYPE\t" + community.tick + "\t" + pl + "\t" + aa + "\t" + ab + "\t" + bb +
+        "\t" + ac + "\t" + bc + "\t" + ((ac > 0) ? 2.0 * aa / ac else 0.0) +
+        "\t" + ((ac > 0) ? 1.0 * ab / ac else 0.0) + "\t" + ((bc > 0) ? 2.0 * bb / bc else 0.0) +
+        "\t" + ((bc > 0) ? 1.0 * ab / bc else 0.0));
+}
+
+function (float) calcLD(float x, float y) { return mean(x * y) - mean(x) * mean(y); }
+
+1 early() {
+    sim.addSubpop("p1", N); sim.addSubpop("p2", N);
+    a1 = sample(p1.haplosomes, asInteger(INV_INIT * 2 * N));
+    a2 = sample(p2.haplosomes, asInteger(INV_INIT * 2 * N));
+    b1 = setDifference(p1.haplosomes, a1); b2 = setDifference(p2.haplosomes, a2);
+    a1.addNewDrawnMutation(m1, INV_MID); a1.addNewDrawnMutation(m2, LOC_A); a1.addNewDrawnMutation(m3, LOC_B);
+    a2.addNewDrawnMutation(m1, INV_MID); a2.addNewDrawnMutation(m2, LOC_A); a2.addNewDrawnMutation(m3, LOC_B);
+    b1.addNewDrawnMutation(m5, LOC_A); b1.addNewDrawnMutation(m6, LOC_B);
+    b2.addNewDrawnMutation(m5, LOC_A); b2.addNewDrawnMutation(m6, LOC_B);
+    // Two phase backgrounds within each orientation: 11 and 00.
+    one = sample(a1, asInteger(VARIANT_FREQ * size(a1)));
+    one.addNewDrawnMutation(m7, VAR_LEFT); one.addNewDrawnMutation(m8, VAR_RIGHT);
+    one = sample(a2, asInteger(VARIANT_FREQ * size(a2)));
+    one.addNewDrawnMutation(m7, VAR_LEFT); one.addNewDrawnMutation(m8, VAR_RIGHT);
+    one = sample(b1, asInteger(VARIANT_FREQ * size(b1)));
+    one.addNewDrawnMutation(m9, VAR_LEFT); one.addNewDrawnMutation(m10, VAR_RIGHT);
+    one = sample(b2, asInteger(VARIANT_FREQ * size(b2)));
+    one.addNewDrawnMutation(m9, VAR_LEFT); one.addNewDrawnMutation(m10, VAR_RIGHT);
+    catn("PHASE_INIT\tp1\tA\t" + mean(a1.containsMarkerMutation(m7, VAR_LEFT) & a1.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(!a1.containsMarkerMutation(m7, VAR_LEFT) & !a1.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(a1.containsMarkerMutation(m7, VAR_LEFT) & !a1.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(!a1.containsMarkerMutation(m7, VAR_LEFT) & a1.containsMarkerMutation(m8, VAR_RIGHT)));
+    catn("PHASE_INIT\tp2\tA\t" + mean(a2.containsMarkerMutation(m7, VAR_LEFT) & a2.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(!a2.containsMarkerMutation(m7, VAR_LEFT) & !a2.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(a2.containsMarkerMutation(m7, VAR_LEFT) & !a2.containsMarkerMutation(m8, VAR_RIGHT)) +
+        "\t" + mean(!a2.containsMarkerMutation(m7, VAR_LEFT) & a2.containsMarkerMutation(m8, VAR_RIGHT)));
+    catn("PHASE_INIT\tp1\tB\t" + mean(b1.containsMarkerMutation(m9, VAR_LEFT) & b1.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(!b1.containsMarkerMutation(m9, VAR_LEFT) & !b1.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(b1.containsMarkerMutation(m9, VAR_LEFT) & !b1.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(!b1.containsMarkerMutation(m9, VAR_LEFT) & b1.containsMarkerMutation(m10, VAR_RIGHT)));
+    catn("PHASE_INIT\tp2\tB\t" + mean(b2.containsMarkerMutation(m9, VAR_LEFT) & b2.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(!b2.containsMarkerMutation(m9, VAR_LEFT) & !b2.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(b2.containsMarkerMutation(m9, VAR_LEFT) & !b2.containsMarkerMutation(m10, VAR_RIGHT)) +
+        "\t" + mean(!b2.containsMarkerMutation(m9, VAR_LEFT) & b2.containsMarkerMutation(m10, VAR_RIGHT)));
+    catn("ADAPTIVE_INIT\tp1\t" + mean(a1.containsMarkerMutation(m2, LOC_A)) + "\t" + mean(a1.containsMarkerMutation(m3, LOC_B)) +
+        "\t" + mean(b1.containsMarkerMutation(m5, LOC_A)) + "\t" + mean(b1.containsMarkerMutation(m6, LOC_B)));
+    catn("ADAPTIVE_INIT\tp2\t" + mean(a2.containsMarkerMutation(m2, LOC_A)) + "\t" + mean(a2.containsMarkerMutation(m3, LOC_B)) +
+        "\t" + mean(b2.containsMarkerMutation(m5, LOC_A)) + "\t" + mean(b2.containsMarkerMutation(m6, LOC_B)));
+    p1.setMigrationRates(p2, MIG); p2.setMigrationRates(p1, MIG);
+    if (CLEAN_INIT) sim.recalculateFitness();
+    catn("RUN_META\tmechanistic_variation=T\tpermanent_suppression=" + PERMANENT_SUPPRESSION +
+        "\tN=" + N + "\tMIG=" + MIG + "\tS=" + S + "\tVARIANT_FREQ=" + VARIANT_FREQ + "\tGENS=" + GENS);
+    catn("generation\tpop\tA_freq\tm2_freq\tm3_freq\tm5_freq\tm6_freq\tLD_m1_m2\tLD_m1_m3\tLD_m2_m7\tLD_m2_m8\tLD_m3_m7\tLD_m3_m8\tLD_m5_m9\tLD_m5_m10\tLD_m6_m9\tLD_m6_m10\tA_parent11\tA_parent00\tA_recomb10\tA_recomb01\tB_parent11\tB_parent00\tB_recomb10\tB_recomb01\tpop_region_copy_burden\tpop_region_weighted_burden\tchr2_copy_burden");
+}
+
+recombination() {
+    x = haplosome1.containsMarkerMutation(m1, INV_MID); y = haplosome2.containsMarkerMutation(m1, INV_MID);
+    inside = (breakpoints > INV_START) & (breakpoints <= INV_END);
+    if (PERMANENT_SUPPRESSION | (x != y)) {
+        if (!any(inside)) return F;
+        breakpoints = breakpoints[!inside]; return T;
+    }
+    if (!(x | y) | (sum(inside) % 2 == 0)) return F;
+    left = breakpoints == INV_START; right = breakpoints == INV_END + 1;
+    breakpoints = sort(c(breakpoints[!(left | right)], c(INV_START, INV_END + 1)[c(sum(left) == 0, sum(right) == 0)]));
+    return T;
+}
+
+1:GENS late() {
+    if ((community.tick % LOG_EVERY != 0) & (community.tick != GENS)) return;
+    for (pop in c(p1, p2)) {
+        h = pop.haplosomes; A = h.containsMarkerMutation(m1, INV_MID); B = !A;
+        m2f = h.containsMarkerMutation(m2, LOC_A); m3f = h.containsMarkerMutation(m3, LOC_B);
+        m5f = h.containsMarkerMutation(m5, LOC_A); m6f = h.containsMarkerMutation(m6, LOC_B);
+        a11 = A & h.containsMarkerMutation(m7, VAR_LEFT) & h.containsMarkerMutation(m8, VAR_RIGHT);
+        a00 = A & !h.containsMarkerMutation(m7, VAR_LEFT) & !h.containsMarkerMutation(m8, VAR_RIGHT);
+        a10 = A & h.containsMarkerMutation(m7, VAR_LEFT) & !h.containsMarkerMutation(m8, VAR_RIGHT);
+        a01 = A & !h.containsMarkerMutation(m7, VAR_LEFT) & h.containsMarkerMutation(m8, VAR_RIGHT);
+        b11 = B & h.containsMarkerMutation(m9, VAR_LEFT) & h.containsMarkerMutation(m10, VAR_RIGHT);
+        b00 = B & !h.containsMarkerMutation(m9, VAR_LEFT) & !h.containsMarkerMutation(m10, VAR_RIGHT);
+        b10 = B & h.containsMarkerMutation(m9, VAR_LEFT) & !h.containsMarkerMutation(m10, VAR_RIGHT);
+        b01 = B & !h.containsMarkerMutation(m9, VAR_LEFT) & h.containsMarkerMutation(m10, VAR_RIGHT);
+        allm = sim.mutationsOfType(m4);
+        if (size(allm) > 0) { f = sim.mutationFrequencies(pop, allm); rr = (allm.position >= INV_START) & (allm.position <= INV_END); cc = allm.position >= CHR_LEN; pr = sum(f[rr]); pw = sum(f[rr] * (-allm[rr].selectionCoeff)); ch = sum(f[cc]); }
+        else { pr = 0.0; pw = 0.0; ch = 0.0; }
+        subs = sim.substitutions; fm = subs[subs.mutationType == m4]; fr = (fm.position >= INV_START) & (fm.position <= INV_END); fc = sum(fr); fw = (fc > 0) ? sum(-fm[fr].selectionCoeff) else 0.0; ch = ch + sum(fm.position >= CHR_LEN); pr = pr + fc; pw = pw + fw;
+        pl = (pop == p1) ? "p1" else "p2";
+        m7f = h.containsMarkerMutation(m7,VAR_LEFT); m8f = h.containsMarkerMutation(m8,VAR_RIGHT);
+        m9f = h.containsMarkerMutation(m9,VAR_LEFT); m10f = h.containsMarkerMutation(m10,VAR_RIGHT);
+        d12 = calcLD(asFloat(A),asFloat(m2f)); d13 = calcLD(asFloat(A),asFloat(m3f)); d27 = calcLD(asFloat(m2f),asFloat(m7f)); d28 = calcLD(asFloat(m2f),asFloat(m8f));
+        d37 = calcLD(asFloat(m3f),asFloat(m7f)); d38 = calcLD(asFloat(m3f),asFloat(m8f)); d59 = calcLD(asFloat(m5f),asFloat(m9f)); d510 = calcLD(asFloat(m5f),asFloat(m10f));
+        d69 = calcLD(asFloat(m6f),asFloat(m9f)); d610 = calcLD(asFloat(m6f),asFloat(m10f));
+        catn(community.tick + "\t" + pl + "\t" + mean(A) + "\t" + mean(m2f) + "\t" + mean(m3f) + "\t" + mean(m5f) + "\t" + mean(m6f) +
+            "\t" + d12 + "\t" + d13 + "\t" + d27 + "\t" + d28 +
+            "\t" + d37 + "\t" + d38 + "\t" + d59 + "\t" + d510 +
+            "\t" + d69 + "\t" + d610 +
+            "\t" + mean(a11) + "\t" + mean(a00) + "\t" + mean(a10) + "\t" + mean(a01) + "\t" + mean(b11) + "\t" + mean(b00) + "\t" + mean(b10) + "\t" + mean(b01) + "\t" + pr + "\t" + pw + "\t" + ch);
+        catn("FIXED\t" + community.tick + "\t" + pl + "\t" + fc + "\t" + fw);
+        log_genotype_state(pop, pl); log_class_load(pop, pl, h[A], "A"); log_class_load(pop, pl, h[B], "B");
+    }
+}
+
+GENS late() { sim.simulationFinished(); }
