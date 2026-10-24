@@ -97,7 +97,8 @@ python3 scripts/analyze_baseline.py
 Rscript scripts/make_baseline_figures.R
 ```
 
-The Arm B manifest is `results/mechanistic_arm_b/mechanistic_arm_B_manifest.tsv`.
+The Arm B manifest is `config/mechanistic_arm_B_manifest.tsv`; the copy under
+`results/mechanistic_arm_b/` is retained as an experiment metadata snapshot.
 On MSU HPCC, copy the repository to a project/scratch location, load SLiM in
 the job environment, run the six-task smoke array, compare it with the
 included local smoke files, and only then submit the production array. See
