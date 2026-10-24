@@ -13,11 +13,20 @@ and computational sources in `docs/REFERENCES.md`, especially Berdan et al.
 (2021), StevisonLab/Slim_ICE where relevant to reused context, and the SLiM 5
 and Eidos software references.
 
-The public Slim_ICE repository and the local legacy snapshot were compared for
-model family and algorithmic ancestry. The current two-population models were
-not presented as direct copies of the public repository. Exact file-level
-identity could not be established for every historical file because the local
-snapshot and public repository do not provide a common provenance manifest.
+The public Slim_ICE repository and the local legacy snapshot were compared at
+commit `73fdcba3fcb673ee85f70cec51aff770d308c382`. All 14 checked code/driver
+files are byte-for-byte identical; see
+`archive/legacy_ice/FILE_HASH_COMPARISON.tsv`. The public README credits Laurie
+Stevison with writing the SLiM models and computational work and Spencer Koury
+with collaboration. The current two-population models are not direct copies of
+those files.
+
+`CITATION.cff` currently identifies David B. Lowry as the initial repository
+author, as requested for this release. Laurie Stevison and Spencer Koury are
+not assigned authorship of this repository by inference; their upstream
+computational contributions are explicitly acknowledged and should be reviewed
+by the human project team for appropriate acknowledgment or co-authorship
+before publication.
 
 ## Citation versus license
 

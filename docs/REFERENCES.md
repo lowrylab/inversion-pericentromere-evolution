@@ -11,7 +11,8 @@
    of chromosomal inversions. *PLoS Genetics* (2021). DOI:
    <https://doi.org/10.1371/journal.pgen.1009411>.
 5. StevisonLab. *Slim_ICE*: Modeling inversions with interchromosomal effect.
-   <https://github.com/StevisonLab/Slim_ICE>.
+   <https://github.com/StevisonLab/Slim_ICE>. The current README requests
+   citation of the Zenodo release: <https://doi.org/10.5281/zenodo.20170793>.
 6. Nickel J, Foote AD. Hitchhiking of deleterious mutations within chromosomal
    inversions. *Trends in Ecology & Evolution* 41:726–735 (2026). DOI:
    <https://doi.org/10.1016/j.tree.2026.04.011>.
@@ -45,6 +46,9 @@ two-population models:
 15. Grell RF. (1978). A comparison of heat and interchromosomal effects on
     recombination and interference in *Drosophila melanogaster*. *Genetics*
     89:65–77. <https://doi.org/10.1093/genetics/89.1.65>.
+16. Koury SA, Stevison LS. (2024). The interchromosomal effect of inversion
+    heterozygosity on meiotic recombination in *Drosophila melanogaster*: a
+    meta-analysis preregistration. <https://osf.io/rd3a7>.
 
 The current project uses references 1–9 for simulation framework, inversion,
 local-adaptation, load, and biological context. References 10–15 document

@@ -2,6 +2,12 @@
 results/**/raw/
 results/**/stdout/
 results/**/stderr/
+results/maintenance_baseline/inversion/
+results/maintenance_baseline/permanent_suppression/
+results/mechanistic_arm_b/inversion/
+results/mechanistic_arm_b/permanent_suppression/
+validation/mechanistic_smoke/hpcc_smoke/
+*.done
 *.log
 *.out
 *.err
@@ -18,4 +24,5 @@ __pycache__/
 *.pem
 *.key
 *.token
+slurm_logs/
 
