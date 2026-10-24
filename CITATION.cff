@@ -14,7 +14,7 @@ authors:
 repository-code: "https://github.com/lowrylab/inversion-pericentromere-evolution"
 license: MIT
 version: 0.1.0
-date-released: 2026-10-24
+date-released: "2026-10-24"
 keywords:
   - SLiM
   - chromosomal inversion
