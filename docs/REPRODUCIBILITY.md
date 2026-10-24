@@ -8,6 +8,21 @@ the Arm B 300-task manifest, local smoke outputs, and the scripts used to
 analyze and validate them. Raw production outputs are excluded to keep the
 repository reviewable; the manifests identify their expected paths and seeds.
 
+## Three reproducibility levels
+
+**Code reproducibility** means that the exact model files, hashes, parameters,
+manifests, analysis scripts, and compact inputs are preserved here.
+
+**Computational reproducibility** means that the simulations can be rerun with
+SLiM 5.1 on a compatible local machine or HPCC environment and that task
+outputs pass the same completion and accounting checks. A site-specific SLiM
+module and cluster filesystem are still required for HPCC execution.
+
+**Scientific robustness** asks whether conclusions persist across alternative
+migration, selection, dominance, DFE, initial-frequency, and seed choices. The
+completed maintenance baseline is one parameterized result; it is not by
+itself a robustness analysis.
+
 ## Baseline
 
 From the repository root, use SLiM 5.1:
@@ -41,6 +56,19 @@ requires enough local storage for raw outputs.
 The HPCC smoke and production runs were not executed in the current local
 environment because no MSU login, SLURM controller, or module tree was
 available. No HPCC completion or resource-use claim is made here.
+
+## Clean-checkout test
+
+The fast validation is designed to run from a clean checkout:
+
+```sh
+python3 -m py_compile scripts/*.py hpcc/*.py
+python3 scripts/ci_validate.py
+```
+
+These checks require no files outside the repository. SLiM-dependent
+simulation and R figure regeneration remain explicitly documented external
+dependencies.
 
 ## Figure regeneration
 

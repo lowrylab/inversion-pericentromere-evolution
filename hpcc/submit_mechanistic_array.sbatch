@@ -28,13 +28,33 @@ IFS=$'\t' read -r task_id migration_index mig replicate model permanent seed std
 out="$PACKAGE_ROOT/$stdout"
 err="$PACKAGE_ROOT/$stderr"
 mkdir -p "$(dirname "$out")"
-if [[ -s "$out" ]] && grep -q $'^10000\tp1\t' "$out" && grep -q $'^LOAD\t10000\tp2\tB\t' "$out"; then
+done_marker="$out.done"
+if [[ -s "$out" && -s "$done_marker" ]] && grep -q $'^10000\tp1\t' "$out" && grep -q $'^LOAD\t10000\tp2\tB\t' "$out"; then
   echo "COMPLETE task=$TASK_ID output=$out"
   exit 0
 fi
-rm -f "$out" "$err"
+
+tmpout="$out.tmp.${SLURM_JOB_ID:-local}.${TASK_ID}"
+tmperr="$err.tmp.${SLURM_JOB_ID:-local}.${TASK_ID}"
+rm -f "$tmpout" "$tmperr"
+trap 'rm -f "$tmpout" "$tmperr"' EXIT
 
 echo "START task=$TASK_ID model=$model mig=$mig rep=$rep seed=$seed"
 "$SLIM_BIN" -s "$seed" -d "MIG=$mig" -d CLEAN_INIT=T \
-  -d "PERMANENT_SUPPRESSION=$permanent" "$MODEL" > "$out" 2> "$err"
+  -d "PERMANENT_SUPPRESSION=$permanent" "$MODEL" > "$tmpout" 2> "$tmperr"
+if ! grep -q $'^10000\tp1\t' "$tmpout" || ! grep -q $'^LOAD\t10000\tp2\tB\t' "$tmpout"; then
+  echo "INCOMPLETE task=$TASK_ID: expected terminal records were not found" >&2
+  exit 3
+fi
+mv "$tmpout" "$out"
+mv "$tmperr" "$err"
+{
+  echo "task_id=$task_id"
+  echo "slurm_job_id=${SLURM_JOB_ID:-unknown}"
+  echo "slurm_array_task_id=${SLURM_ARRAY_TASK_ID:-unknown}"
+  echo "seed=$seed"
+  echo "model=$model"
+  echo "output_sha256=$(shasum -a 256 "$out" | awk '{print $1}')"
+  echo "completion_time=$(date '+%Y-%m-%d %H:%M:%S %z')"
+} > "$done_marker"
 echo "END task=$TASK_ID model=$model mig=$mig rep=$rep seed=$seed"

@@ -1,10 +1,13 @@
 args <- commandArgs(trailingOnly=TRUE)
 run_root <- if (length(args)) args[[1]] else "results/maintenance_baseline"
+repo_root <- dirname(dirname(normalizePath(run_root, mustWork=FALSE)))
+figure_out <- if (length(args) > 1) args[[2]] else file.path(repo_root, "figures", "maintenance_baseline")
 out <- file.path(run_root, "analysis")
 dir.create(out, recursive=TRUE, showWarnings=FALSE)
+dir.create(figure_out, recursive=TRUE, showWarnings=FALSE)
 ep <- read.delim(file.path(out, "endpoint_replicates.tsv"), check.names=FALSE)
 for (m in sort(unique(ep$mig))) {
-  png(file.path(out, sprintf("endpoint_distribution_mig_%g.png", m)), width=1200, height=800, res=140)
+  png(file.path(figure_out, sprintf("endpoint_distribution_mig_%g.png", m)), width=1200, height=800, res=140)
   par(mfrow=c(2,2), mar=c(4,4,3,1))
   for (pop in c("p1","p2")) {
     vals <- split(ep, list(ep$model, ep$mig), drop=TRUE)
@@ -24,7 +27,7 @@ for (m in sort(unique(ep$mig))) {
 }
 tr <- read.delim(file.path(out, "trajectory_summary.tsv"), check.names=FALSE)
 for (m in c(0, .01, .05)) {
-  png(file.path(out, sprintf("trajectory_summary_mig_%g.png", m)), width=1200, height=800, res=140)
+  png(file.path(figure_out, sprintf("trajectory_summary_mig_%g.png", m)), width=1200, height=800, res=140)
   par(mfrow=c(2,2), mar=c(4,4,3,1))
   for (pop in c("p1","p2")) {
     z <- tr[tr$mig==m & tr$pop==pop & tr$metric=="A_freq",]

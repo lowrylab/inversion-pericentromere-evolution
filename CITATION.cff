@@ -10,10 +10,11 @@ authors:
   - family-names: Lowry
     given-names: David B.
     affiliation: Michigan State University
+    orcid: "https://orcid.org/0000-0002-8182-1059"
 repository-code: "https://github.com/lowrylab/inversion-pericentromere-evolution"
 license: MIT
 version: 0.1.0
-date-released: 2026-10-18
+date-released: 2026-10-24
 keywords:
   - SLiM
   - chromosomal inversion

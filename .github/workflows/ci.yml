@@ -1,0 +1,22 @@
+name: repository-validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fast-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Compile Python scripts
+        run: python -m py_compile scripts/*.py hpcc/*.py
+      - name: Validate repository, manifests, hashes, fixtures, and burden identities
+        run: python scripts/ci_validate.py
+      - name: Validate citation metadata
+        run: |
+          ruby -e 'require "yaml"; y = YAML.load_file("CITATION.cff"); abort "missing cff-version" unless y["cff-version"]; abort "missing author ORCID" unless y.dig("authors", 0, "orcid") == "https://orcid.org/0000-0002-8182-1059"; abort "missing repository URL" unless y["repository-code"]'
+

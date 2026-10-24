@@ -24,6 +24,11 @@ and m5/m6 on the B class. The mechanistic arm adds neutral linked markers
 m7/m8 and m9/m10 to create within-orientation variation without changing
 fitness.
 
+The pericentromeric treatment is an idealized constitutively suppressed
+interval, not a detailed physical model of centromere biology. The
+genotype-dependent rule is an intentional model specification; it should not
+be described as the canonical SLiM inversion recipe.
+
 ## Model and experiments
 
 The two populations exchange migrants and experience reciprocal antagonistic
@@ -44,6 +49,12 @@ mechanistic arm is intended to test actual recombination-mediated uncoupling.
 Neither 10,000 generations nor the baseline load trajectories should be
 described as an established equilibrium.
 
+The current deleterious mutation dominance parameter is h=0.5. This project
+therefore does not directly test the strongly recessive-load conditions under
+which associative overdominance may arise. See
+`docs/SCIENTIFIC_BACKGROUND.md` for the conceptual comparison and future
+experiments.
+
 ## Repository map
 
 * `models/`: exact validated production models.
@@ -57,6 +68,23 @@ described as an established equilibrium.
 * `docs/`: reproducibility, provenance, references, audit, and AI disclosure.
 * `archive/`: selected historical audits and legacy ICE materials, clearly
   separated from the current model.
+
+## Citation and reuse
+
+If you use code, simulation models, analytical workflows, or other materials
+from this repository in a scientific publication, please cite this repository
+and any associated research publication.
+
+This repository builds upon previous theoretical and computational work,
+including StevisonLab/Slim_ICE and Berdan et al. (2021). Researchers using
+these materials should also cite the relevant original sources identified in
+`docs/REFERENCES.md` and `docs/CODE_PROVENANCE.md`.
+
+We encourage researchers who adapt or extend these models to acknowledge the
+original computational contributions and clearly document their modifications.
+
+This scholarly request for citation is distinct from the legal permissions of
+the MIT license. See `docs/CITATION_GUIDE.md`.
 
 ## Reproduction
 

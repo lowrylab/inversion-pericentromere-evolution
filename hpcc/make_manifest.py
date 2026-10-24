@@ -17,8 +17,8 @@ for mi, mig in enumerate(migs):
                 "task_id": task, "migration_index": mi, "mig": mig,
                 "replicate": rep, "model": model, "permanent_suppression": flag,
                 "seed": seed,
-                "stdout": f"results/{model}/mig_{mig}_rep_{rep}.tsv",
-                "stderr": f"results/{model}/mig_{mig}_rep_{rep}.stderr",
+                "stdout": f"results/mechanistic_arm_b/{model}/mig_{mig}_rep_{rep}.tsv",
+                "stderr": f"results/mechanistic_arm_b/{model}/mig_{mig}_rep_{rep}.stderr",
                 "status": "PENDING",
             })
             task += 1

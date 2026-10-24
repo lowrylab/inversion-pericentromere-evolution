@@ -8,11 +8,13 @@ Mechanistic Arm B is the same validated conditional/permanent callback logic
 with neutral within-orientation markers and diagnostic phase records. Exact
 SHA256 values are in `config/model_hashes.tsv`.
 
-The defining recombination rule was independently specified for this project:
-inversion A/A and B/B allow internal recombination, inversion A/B suppresses
-all internal breakpoints, and the permanent comparator suppresses all internal
-breakpoints in every genotype. The Arm B phase smoke test documents this
-behavior.
+The defining recombination rule is the declared implementation choice for this
+project: inversion A/A and B/B allow internal recombination, inversion A/B
+suppresses all internal breakpoints, and the permanent comparator suppresses
+internal breakpoints in every genotype. Similar heterokaryotype-suppression
+assumptions occur in earlier inversion models; this repository does not claim
+to have invented that assumption. The Arm B phase smoke test documents the
+implemented behavior.
 
 ## Relationship to Slim_ICE and Berdan et al.
 
@@ -31,11 +33,12 @@ copy, these files are retained for audit/provenance rather than presented as
 new project code. Before redistributing the archive publicly, verify the
 upstream license and retain any required notices.
 
-## Independent development
+## Project-specific implementation
 
-The two-population antagonistic-pleiotropy model, conditional recombination
-callback, burden decomposition, paired manifests, Arm B marker design, and
-current analyses were developed for this project. They were not copied as a
-canonical inversion implementation from Slim_ICE. The archived templates and
-audit logs show the development path and superseded alternatives.
+The two-population antagonistic-pleiotropy model, burden decomposition, paired
+manifests, Arm B marker design, and current analyses were developed for this
+project. The callback is an implementation of the declared conditional rule,
+not a claim of a new recombination principle and not a canonical inversion
+implementation copied from Slim_ICE. The archived templates and audit logs
+show the development path and superseded alternatives.
 
